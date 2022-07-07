@@ -15,11 +15,10 @@ func main() {
 	psqlConnect = setDBConnection()
 	db = dbConnect()
 	defer db.Close()
-	setTablesLimit()
 	// INIT END
 
-	router.HandleFunc("/actors/{id}", getActor).Methods("GET")       // GET a single actor by ID
-	router.HandleFunc("/directors/{id}", getDirector).Methods("GET") // GET a single director by ID
+	router.HandleFunc("/actors/{id}", getActor).Methods("GET") // GET a single actor by ID
+	/*router.HandleFunc("/directors/{id}", getDirector).Methods("GET") // GET a single director by ID
 	router.HandleFunc("/movies/{id}", getMovie).Methods("GET")       // GET a single movie by ID
 	router.HandleFunc("/revenues/{id}", getRevenues).Methods("GET")  // GET a single set of revenues by ID
 
@@ -36,7 +35,7 @@ func main() {
 	router.HandleFunc("/actors/{id}", deleteActor).Methods("DELETE")           // DELETE a single actor by ID
 	router.HandleFunc("/directors/{id}", deleteDirector).Methods("DELETE")     // DELETE a single director by ID
 	router.HandleFunc("/movies/{id}", deleteMovie).Methods("DELETE")           // DELETE a single movie by ID
-	router.HandleFunc("/revenues/{id}", deleteMovieRevenues).Methods("DELETE") // DELETE a single set of revenues by ID
+	router.HandleFunc("/revenues/{id}", deleteMovieRevenues).Methods("DELETE") // DELETE a single set of revenues by ID*/
 
 	fmt.Printf("Server up and running!\n")
 	http.ListenAndServe(":5000", router)

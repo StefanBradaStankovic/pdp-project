@@ -8,14 +8,34 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var TablesLimit DBTableLimit
-var psqlConnect string
-var db *sql.DB
+//
+// -------------------- QUERY SECTION --------------------
+// -------------------- QUERY SECTION --------------------
+// -------------------- QUERY SECTION --------------------
+//
+// Select a single row from 'TABLE_NAME' using 'ITEM_ID'
+func selectItem(id int, queryString string) (SqlRow, error) {
+	var item SqlRow
+	statement, err := db.Prepare(queryString)
+	if err != nil {
+		return item, err
+	}
+
+	item.row = statement.QueryRow(id)
+	err = item.row.Err()
+	if err != nil {
+		return item, err
+	}
+
+	return item, err
+}
 
 //
-// ---------- CONTROLL SECTION ----------
+// -------------------- CONTROLL SECTION --------------------
+// -------------------- CONTROLL SECTION --------------------
+// -------------------- CONTROLL SECTION --------------------
 //
-// Make a DB connection string using specified
+// Make a DB connection string using specified config
 func setDBConnection() string {
 	psqlConnect := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", db_host, db_port, db_user, db_password, db_name)
 
@@ -27,7 +47,7 @@ func dbConnect() *sql.DB {
 	fmt.Printf("Connecting to database...	")
 	db, err := sql.Open("postgres", psqlConnect)
 	if err != nil {
-		log.Fatal("Could not connect to the database: ", err)
+		log.Fatal("ERROR - db_controll.go - Could not connect to the database: ", err)
 	} else {
 		fmt.Printf("Success!\n")
 	}
@@ -35,40 +55,19 @@ func dbConnect() *sql.DB {
 	return db
 }
 
-// Count DB rows in each table
-func setTablesLimit() {
-	var err error
-
-	fmt.Printf("Setting limit for table: actors\n")
-	err = db.QueryRow("SELECT MAX(actor_id) FROM actors").Scan(&TablesLimit.ActorsLimit)
+// Prepare a database statement
+func checkIfExists(id int, queryString string) (bool, error) {
+	statement, err := db.Prepare(queryString)
+	var result int
 	if err != nil {
-		log.Fatal("Could not execute query: ", err)
-	} else {
-		fmt.Printf("Limit set - maximum ID detected '%d'\n", TablesLimit.ActorsLimit)
+		fmt.Printf("ERROR - db_controll.go - %s\n", err)
+		return false, err
+	}
+	err = statement.QueryRow(id).Scan(&result)
+	fmt.Printf("Query result is: %d\n", result)
+	if err != nil || result <= 0 {
+		return false, err
 	}
 
-	fmt.Printf("Setting limit for table: directors\n")
-	err = db.QueryRow("SELECT MAX(director_id) FROM directors").Scan(&TablesLimit.DirectorsLimit)
-	if err != nil {
-		log.Fatal("Could not execute query: ", err)
-	} else {
-		fmt.Printf("Limit set - maximum ID detected '%d'\n", TablesLimit.DirectorsLimit)
-	}
-
-	fmt.Printf("Setting limit for table: movies\n")
-	err = db.QueryRow("SELECT MAX(movie_id) FROM movies").Scan(&TablesLimit.MoviesLimit)
-	if err != nil {
-		log.Fatal("Could not execute query: ", err)
-	} else {
-		fmt.Printf("Limit set - maximum ID detected '%d'\n", TablesLimit.MoviesLimit)
-	}
-
-	fmt.Printf("Setting limit for table: movie_revenues\n")
-	err = db.QueryRow("SELECT MAX(movie_id) FROM movie_revenues").Scan(&TablesLimit.MovieRevenuesLimit)
-	if err != nil {
-		log.Fatal("Could not execute query: ", err)
-	} else {
-		fmt.Printf("Limit set - maximum ID detected '%d'\n", TablesLimit.MovieRevenuesLimit)
-	}
-
+	return true, err
 }

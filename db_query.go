@@ -1,31 +1,27 @@
 package main
 
-import (
-	"fmt"
-	"log"
-	"time"
-)
-
+/*
 //
 // ---------- SELECT SECTION ----------
 //
-// Sellect a single row from 'actors' table using actor_id
-func selectActor(id int) (NillableActors, error) {
-	var actor NillableActors
-	statement, err := db.Prepare("SELECT * FROM actors WHERE actor_id = $1")
+// Select a single row from 'TABLE_NAME' using 'ITEM_ID'
+func selectItem(id int, queryString string) (SqlRow, error) {
+	var item SqlRow
+	statement, err := db.Prepare(queryString)
 	if err != nil {
-		return actor, err
+		return item, err
 	}
 
-	execTime := time.Now().UnixMilli()
-	err = statement.QueryRow(id).Scan(&actor.ActorID, &actor.FirstName, &actor.LastName, &actor.Gender, &actor.DateOfBirth)
+	item.row = statement.QueryRow(id)
+	err = item.row.Err()
 	if err != nil {
-		return actor, err
+		return item, err
 	}
-	fmt.Printf("Success! Execution time: %d milliseconds\n", time.Now().UnixMilli()-execTime)
 
-	return actor, err
+	return item, err
 }
+
+
 
 // Sellect a single row from 'directors' table using director_id
 func selectDirector(id int) (NillableDirectors, error) {
@@ -314,3 +310,5 @@ func deleteFromMovieRevenues(id int) (int, error) {
 
 	return result, err
 }
+
+*/

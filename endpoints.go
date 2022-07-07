@@ -1,48 +1,11 @@
 package main
 
-import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"strconv"
-
-	"github.com/gorilla/mux"
-)
+/*
 
 //
 // ---------- GET SECTION ----------
 //
 // Query one row by ID from table 'actors'
-func getActor(w http.ResponseWriter, r *http.Request) {
-	var idParam string = mux.Vars(r)["id"]
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		w.WriteHeader(400)
-		w.Write([]byte("ID could not be converted to integer"))
-		fmt.Println("ERROR: bad ID: Not integer!")
-		return
-	}
-
-	if id <= 0 || id > TablesLimit.ActorsLimit {
-		w.WriteHeader(400)
-		w.Write([]byte("ID out of range"))
-		fmt.Println("ERROR: bad ID: Out of range!")
-		return
-	}
-
-	fmt.Printf("Requested actor of ID %d\n", id)
-
-	actor, err := selectActor(id)
-	if err != nil {
-		fmt.Printf("ERROR: bad query: %s\n", err)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(NillableToActors(actor))
-
-	fmt.Printf("Returning:\n%v\n", NillableToActors(actor))
-
-}
 
 // Query one row by ID from table 'directors'
 func getDirector(w http.ResponseWriter, r *http.Request) {
@@ -198,6 +161,7 @@ func postActor(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&actor)
 	fmt.Printf("Received object: %v\n", actor)
 
+	// Add error handling
 	actor.ActorID = insertIntoActors(actor)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -254,6 +218,7 @@ func deleteActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if ID exists instead of current method
 	if id <= 0 || id > TablesLimit.ActorsLimit {
 		w.WriteHeader(400)
 		w.Write([]byte("ID out of range"))
@@ -370,3 +335,5 @@ func deleteMovieRevenues(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Deleting:\n%d\n", deletedId)
 
 }
+
+*/
