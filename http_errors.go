@@ -6,6 +6,8 @@ type httpStatus struct {
 }
 
 var (
+	statusCodeItemDeleted = httpStatus{200, "Item deleted"}
+
 	statusCodeBadRequest = httpStatus{400, "Bad request"}
 	statusCodeNotFound   = httpStatus{404, "Not found"}
 
