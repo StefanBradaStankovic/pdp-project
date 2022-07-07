@@ -1,3 +1,5 @@
+github.com/StefanBradaStankovic/pdp-project/endpoints v0.0.0-20220707131811-2c47737a8f3c h1:BpjkuDTmpHHIsXa75pJy2zJdbt0BfMlEFRtBiX4gHlU=
+github.com/StefanBradaStankovic/pdp-project/endpoints v0.0.0-20220707131811-2c47737a8f3c/go.mod h1:30uSqf2v5LlkZMZw8rt4whOl2gSt9U5Gd61pGyTR7Cc=
 github.com/gorilla/mux v1.8.0 h1:i40aqfkR1h2SlN9hojwV5ZA91wcXFOvkdNIeFDP5koI=
 github.com/gorilla/mux v1.8.0/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
 github.com/lib/pq v1.10.6 h1:jbk+ZieJ0D7EVGJYpL9QTz7/YW6UHbmdnZWYyK5cdBs=
