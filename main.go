@@ -17,7 +17,7 @@ func main() {
 	defer db.Close()
 	// INIT END
 
-	router.HandleFunc("/actors/{id}", getActor).Methods("GET") // GET a single actor by ID
+	router.HandleFunc("/actors/{id}", GetActor).Methods("GET") // GET a single actor by ID
 	/*router.HandleFunc("/directors/{id}", getDirector).Methods("GET") // GET a single director by ID
 	router.HandleFunc("/movies/{id}", getMovie).Methods("GET")       // GET a single movie by ID
 	router.HandleFunc("/revenues/{id}", getRevenues).Methods("GET")  // GET a single set of revenues by ID
