@@ -17,12 +17,12 @@ func main() {
 	defer db.Close()
 	// INIT END
 
-	router.HandleFunc("/actors/{id}", getActor).Methods("GET") // GET a single actor by ID
-	/*router.HandleFunc("/directors/{id}", getDirector).Methods("GET") // GET a single director by ID
+	router.HandleFunc("/actors/{id}", getActor).Methods("GET")       // GET a single actor by ID
+	router.HandleFunc("/directors/{id}", getDirector).Methods("GET") // GET a single director by ID
 	router.HandleFunc("/movies/{id}", getMovie).Methods("GET")       // GET a single movie by ID
 	router.HandleFunc("/revenues/{id}", getRevenues).Methods("GET")  // GET a single set of revenues by ID
 
-	router.HandleFunc("/actors", getAllActors).Methods("GET")          // GET all actors
+	/*router.HandleFunc("/actors", getAllActors).Methods("GET")          // GET all actors
 	router.HandleFunc("/directors", getAllDirectors).Methods("GET")    // GET all directors
 	router.HandleFunc("/movies", getAllMovies).Methods("GET")          // GET all movies
 	router.HandleFunc("/revenues", getAllMovieRevenues).Methods("GET") // GET all movie revenues

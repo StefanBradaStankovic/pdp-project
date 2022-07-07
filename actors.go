@@ -41,7 +41,8 @@ const (
 func getActor(w http.ResponseWriter, r *http.Request) {
 	var idParam string = mux.Vars(r)["id"]
 	id, err := strconv.Atoi(idParam)
-	if err != nil { // CHECK for a valid ID parameter
+	// CHECK for a valid ID parameter
+	if err != nil {
 		w.WriteHeader(statusCodeBadRequest.status)
 		w.Write([]byte(statusCodeBadRequest.message + " - ID not an integer!"))
 		fmt.Println("ERROR: actors.go/strconv.Atoi():   Not integer!")
