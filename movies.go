@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -26,11 +27,11 @@ type Movies struct {
 }
 
 const (
-	movieStatementSingle        = "SELECT * FROM movies WHERE movie_id = $1"
-	movieStatementAll           = "SELECT * FROM movies"
-	movieStatementInsertInto    = "INSERT INTO movies (movie_name, movie_length, movie_lang, release_date, age_certificate, director_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING movie_id"
-	movieStatementDeleteFrom    = "DELETE FROM movies WHERE movie_id = $1 RETURNING movie_id"
-	movieStatementCheckIfExists = "SELECT count(movie_id) FROM movies WHERE movie_id = $1"
+	movieStatementSingle     = "SELECT * FROM movies WHERE movie_id = $1"
+	movieStatementAll        = "SELECT * FROM movies"
+	movieStatementInsertInto = "INSERT INTO movies (movie_name, movie_length, movie_lang, release_date, age_certificate, director_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING movie_id"
+	movieStatementDeleteFrom = "DELETE FROM movies WHERE movie_id = $1 RETURNING movie_id"
+	movieStatementCheckForID = "SELECT count(movie_id) FROM movies WHERE movie_id = $1"
 )
 
 //
@@ -51,7 +52,7 @@ func getMovie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// CHECK if item of ID exists in the database
-	if exists, err := checkIfExists(id, movieStatementCheckIfExists); err != nil || !exists {
+	if exists, err := checkIfExists(id, movieStatementCheckForID); err != nil || !exists {
 		w.WriteHeader(statusCodeNotFound.status)
 		w.Write([]byte(statusCodeNotFound.message + " - item does not exist!"))
 		fmt.Printf("ERROR: movies.go/checkIfExists:   %s\n", err)
@@ -98,6 +99,36 @@ func getAllMovies(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("SELECT | movies | ALL")
 }
 
+// Create a single movie in a database based on input JSON object
+func postMovie(w http.ResponseWriter, r *http.Request) {
+	var movie Movies
+	var statement SqlStmt
+	var err error
+	json.NewDecoder(r.Body).Decode(&movie)
+	// Add error handling
+	statement.statement, err = insertItem(movieStatementInsertInto)
+	if err != nil {
+		w.WriteHeader(statusCodeQueryError.status)
+		w.Write([]byte(statusCodeQueryError.message))
+		fmt.Printf("ERROR: movies.go/insertItem:   %s\n", err)
+		return
+	}
+	id := statement.InsertIntoMovies(movie)
+	if id <= 0 {
+		w.WriteHeader(statusCodeQueryError.status)
+		w.Write([]byte(statusCodeQueryError.message + " - Could not execute query!"))
+		fmt.Printf("ERROR: movies.go/InsertIntoMovies:   %s\n", err)
+		return
+	}
+	statement.statement.Close()
+	movie.MovieID = &id
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(movie)
+
+	fmt.Printf("INSERT INTO | movies | %d\n", *movie.MovieID)
+}
+
 // Find a single movie in a database and delete it permanently
 func deleteMovie(w http.ResponseWriter, r *http.Request) {
 	var idParam string = mux.Vars(r)["id"]
@@ -110,7 +141,7 @@ func deleteMovie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// CHECK if item of ID exists in the database
-	if exists, err := checkIfExists(id, movieStatementCheckIfExists); err != nil || !exists {
+	if exists, err := checkIfExists(id, movieStatementCheckForID); err != nil || !exists {
 		w.WriteHeader(statusCodeNotFound.status)
 		w.Write([]byte(statusCodeNotFound.message + " - item does not exist!"))
 		fmt.Printf("ERROR: movies.go/checkIfExists:   %s\n", err)
@@ -154,5 +185,18 @@ func (inputRow *SqlRows) ScanAllMovies() Movies {
 		fmt.Printf("ERROR - movies.go/interface -  %s\n", err)
 		return output
 	}
+	return output
+}
+
+// rowScanner method for inserting an 'Movies' object into the database as a single row
+func (queryStatement *SqlStmt) InsertIntoMovies(inputRow Movies) int {
+	var output int
+	execTime := time.Now().UnixMilli()
+	err := queryStatement.statement.QueryRow(inputRow.MovieName, inputRow.MovieLength, inputRow.MovieLang, inputRow.ReleaseDate, inputRow.AgeCertificate, inputRow.DirectorID).Scan(&output)
+	if err != nil {
+		fmt.Printf("ERROR - actors.go/interface -  %s\n", err)
+		return 0
+	}
+	fmt.Printf("Success! Execution time: %d milliseconds\n", time.Now().UnixMilli()-execTime)
 	return output
 }

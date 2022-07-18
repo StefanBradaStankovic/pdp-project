@@ -14,6 +14,7 @@ import (
 // ---------------------------------------- QUERY SECTION ----------------------------------------
 // ---------------------------------------- QUERY SECTION ----------------------------------------
 //
+
 // Select a single row from 'TABLE_NAME' using 'ITEM_ID'
 func selectItem(id int, queryString string) (SqlRow, error) {
 	var item SqlRow
@@ -51,6 +52,18 @@ func selectAllItems(queryString string) (SqlRows, error) {
 	return item, err
 }
 
+// Prepare a query statement for inserting a single row into 'TABLE_NAME'
+func insertItem(queryString string) (*sql.Stmt, error) {
+	var statement *sql.Stmt
+	var err error
+	statement, err = db.Prepare(queryString)
+	if err != nil {
+		return statement, err
+	}
+
+	return statement, err
+}
+
 // Delete a single row from 'TABLE_NAME' using 'ITEM_ID'
 func deleteItem(id int, queryString string) (int, error) {
 	var result int
@@ -74,6 +87,7 @@ func deleteItem(id int, queryString string) (int, error) {
 // ---------------------------------------- CONTROLL SECTION ----------------------------------------
 // ---------------------------------------- CONTROLL SECTION ----------------------------------------
 //
+
 // Make a DB connection string using specified config
 func setDBConnection() string {
 	psqlConnect := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", db_host, db_port, db_user, db_password, db_name)

@@ -26,3 +26,6 @@ type SqlRow struct {
 type SqlRows struct {
 	rows *sql.Rows
 }
+type SqlStmt struct {
+	statement *sql.Stmt
+}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -23,11 +24,11 @@ type MovieRevenues struct {
 }
 
 const (
-	revenuesStatementSingle        = "SELECT * FROM movie_revenues WHERE revenue_id = $1"
-	revenuesStatementAll           = "SELECT * FROM movie_revenues"
-	revenuesStatementInsertInto    = "INSERT INTO movie_revenues (revenue_id, movie_id, domestic_takings, international_takings) VALUES ($1, $2, $3, $4) RETURNING revenue_id"
-	revenuesStatementDeleteFrom    = "DELETE FROM movie_revenues WHERE revenue_id = $1 RETURNING revenue_id"
-	revenuesStatementCheckIfExists = "SELECT count(revenue_id) FROM movie_revenues WHERE revenue_id = $1"
+	revenuesStatementSingle     = "SELECT * FROM movie_revenues WHERE revenue_id = $1"
+	revenuesStatementAll        = "SELECT * FROM movie_revenues"
+	revenuesStatementInsertInto = "INSERT INTO movie_revenues (revenue_id, movie_id, domestic_takings, international_takings) VALUES ($1, $2, $3, $4) RETURNING revenue_id"
+	revenuesStatementDeleteFrom = "DELETE FROM movie_revenues WHERE revenue_id = $1 RETURNING revenue_id"
+	revenuesStatementCheckForID = "SELECT count(revenue_id) FROM movie_revenues WHERE revenue_id = $1"
 )
 
 //
@@ -48,7 +49,7 @@ func getRevenues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// CHECK if item of ID exists in the database
-	if exists, err := checkIfExists(id, revenuesStatementCheckIfExists); err != nil || !exists {
+	if exists, err := checkIfExists(id, revenuesStatementCheckForID); err != nil || !exists {
 		w.WriteHeader(statusCodeNotFound.status)
 		w.Write([]byte(statusCodeNotFound.message + " - item does not exist!"))
 		fmt.Printf("ERROR: revenues.go/checkIfExists:   %s\n", err)
@@ -68,7 +69,7 @@ func getRevenues(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(revenue)
 
-	fmt.Printf("SELECT | revenues | %d\n", *revenue.RevenueID)
+	fmt.Printf("SELECT | movie_revenues | %d\n", *revenue.RevenueID)
 }
 
 // Get all rows of movie revenues from the database, encode it into a json
@@ -92,7 +93,37 @@ func getAllRevenues(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(allRevenues)
 
-	fmt.Println("SELECT | revenues | ALL")
+	fmt.Println("SELECT | movie_revenues | ALL")
+}
+
+// Create a single set of revenues in a database based on input JSON object
+func postRevenues(w http.ResponseWriter, r *http.Request) {
+	var revenues MovieRevenues
+	var statement SqlStmt
+	var err error
+	json.NewDecoder(r.Body).Decode(&revenues)
+	// Add error handling
+	statement.statement, err = insertItem(revenuesStatementInsertInto)
+	if err != nil {
+		w.WriteHeader(statusCodeQueryError.status)
+		w.Write([]byte(statusCodeQueryError.message))
+		fmt.Printf("ERROR: revenues.go/insertItem:   %s\n", err)
+		return
+	}
+	id := statement.InsertIntoRevenues(revenues)
+	if id <= 0 {
+		w.WriteHeader(statusCodeQueryError.status)
+		w.Write([]byte(statusCodeQueryError.message + " - Could not execute query!"))
+		fmt.Printf("ERROR: revenues.go/InsertIntoRevenues:   %s\n", err)
+		return
+	}
+	statement.statement.Close()
+	revenues.RevenueID = &id
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(revenues)
+
+	fmt.Printf("INSERT INTO | movie_revenues | %d\n", *revenues.RevenueID)
 }
 
 // Find a single set of revenues in a database and delete it permanently
@@ -107,7 +138,7 @@ func deleteRevenues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// CHECK if item of ID exists in the database
-	if exists, err := checkIfExists(id, revenuesStatementCheckIfExists); err != nil || !exists {
+	if exists, err := checkIfExists(id, revenuesStatementCheckForID); err != nil || !exists {
 		w.WriteHeader(statusCodeNotFound.status)
 		w.Write([]byte(statusCodeNotFound.message + " - item does not exist!"))
 		fmt.Printf("ERROR: revenues.go/checkIfExists:   %s\n", err)
@@ -124,7 +155,7 @@ func deleteRevenues(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("%s - %d", statusCodeItemDeleted.message, deletedID)))
 	w.Header().Set("Content-Type", "application/json")
 
-	fmt.Printf("DELETE FROM | revenues | %d\n", deletedID)
+	fmt.Printf("DELETE FROM | movie_revenues | %d\n", deletedID)
 }
 
 //
@@ -151,5 +182,18 @@ func (inputRow *SqlRows) ScanAllRevenues() MovieRevenues {
 		fmt.Printf("ERROR - directors.go/interface -  %s\n", err)
 		return output
 	}
+	return output
+}
+
+// rowScanner method for inserting an 'MovieRevenues' object into the database as a single row
+func (queryStatement *SqlStmt) InsertIntoRevenues(inputRow MovieRevenues) int {
+	var output int
+	execTime := time.Now().UnixMilli()
+	err := queryStatement.statement.QueryRow(inputRow.RevenueID, inputRow.MovieID, inputRow.DomesticTakings, inputRow.InternationalTakings).Scan(&output)
+	if err != nil {
+		fmt.Printf("ERROR - revenues.go/interface -  %s\n", err)
+		return 0
+	}
+	fmt.Printf("Success! Execution time: %d milliseconds\n", time.Now().UnixMilli()-execTime)
 	return output
 }

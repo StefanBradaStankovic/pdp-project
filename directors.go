@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -19,16 +20,16 @@ type Directors struct {
 	DirectorID  *int    `json:"directorID"`
 	FirstName   *string `json:"firstName"`
 	LastName    *string `json:"lastName"`
-	Nationality *string `json:"nationality"`
 	DateOfBirth *string `json:"dateOfBirth"`
+	Nationality *string `json:"nationality"`
 }
 
 const (
-	directorStatementSingle        = "SELECT * FROM directors WHERE director_id = $1"
-	directorStatementAll           = "SELECT * FROM directors"
-	directorStatementInsertInto    = "INSERT INTO directors (first_name, last_name, nationality, date_of_birth) VALUES ($1, $2, $3, $4) RETURNING director_id"
-	directorStatementDeleteFrom    = "DELETE FROM directors WHERE director_id = $1 RETURNING director_id"
-	directorStatementCheckIfExists = "SELECT count(director_id) FROM directors WHERE director_id = $1"
+	directorStatementSingle     = "SELECT * FROM directors WHERE director_id = $1"
+	directorStatementAll        = "SELECT * FROM directors"
+	directorStatementInsertInto = "INSERT INTO directors (first_name, last_name, date_of_birth, nationality) VALUES ($1, $2, $3, $4) RETURNING director_id"
+	directorStatementDeleteFrom = "DELETE FROM directors WHERE director_id = $1 RETURNING director_id"
+	directorStatementCheckForID = "SELECT count(director_id) FROM directors WHERE director_id = $1"
 )
 
 //
@@ -49,7 +50,7 @@ func getDirector(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// CHECK if item of ID exists in the database
-	if exists, err := checkIfExists(id, directorStatementCheckIfExists); err != nil || !exists {
+	if exists, err := checkIfExists(id, directorStatementCheckForID); err != nil || !exists {
 		w.WriteHeader(statusCodeNotFound.status)
 		w.Write([]byte(statusCodeNotFound.message + " - item does not exist!"))
 		fmt.Printf("ERROR: directors.go/checkIfExists:   %s\n", err)
@@ -96,6 +97,36 @@ func getAllDirectors(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("SELECT | directors | ALL")
 }
 
+// Create a single director in a database based on input JSON object
+func postDirector(w http.ResponseWriter, r *http.Request) {
+	var director Directors
+	var statement SqlStmt
+	var err error
+	json.NewDecoder(r.Body).Decode(&director)
+	// Add error handling
+	statement.statement, err = insertItem(directorStatementInsertInto)
+	if err != nil {
+		w.WriteHeader(statusCodeQueryError.status)
+		w.Write([]byte(statusCodeQueryError.message))
+		fmt.Printf("ERROR: directors.go/insertItem:   %s\n", err)
+		return
+	}
+	id := statement.InsertIntoDirectors(director)
+	if id <= 0 {
+		w.WriteHeader(statusCodeQueryError.status)
+		w.Write([]byte(statusCodeQueryError.message + " - Could not execute query!"))
+		fmt.Printf("ERROR: directors.go/InsertIntoDirectors:   %s\n", err)
+		return
+	}
+	statement.statement.Close()
+	director.DirectorID = &id
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(director)
+
+	fmt.Printf("INSERT INTO | directors | %d\n", *director.DirectorID)
+}
+
 // Find a single director in a database and delete it permanently
 func deleteDirector(w http.ResponseWriter, r *http.Request) {
 	var idParam string = mux.Vars(r)["id"]
@@ -108,7 +139,7 @@ func deleteDirector(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// CHECK if item of ID exists in the database
-	if exists, err := checkIfExists(id, directorStatementCheckIfExists); err != nil || !exists {
+	if exists, err := checkIfExists(id, directorStatementCheckForID); err != nil || !exists {
 		w.WriteHeader(statusCodeNotFound.status)
 		w.Write([]byte(statusCodeNotFound.message + " - item does not exist!"))
 		fmt.Printf("ERROR: directors.go/checkIfExists:   %s\n", err)
@@ -136,7 +167,7 @@ func deleteDirector(w http.ResponseWriter, r *http.Request) {
 // rowScanner method for scanning a 'Directors' object
 func (inputRow *SqlRow) ScanDirector() Directors {
 	var output Directors
-	err := inputRow.row.Scan(&output.DirectorID, &output.FirstName, &output.LastName, &output.Nationality, &output.DateOfBirth)
+	err := inputRow.row.Scan(&output.DirectorID, &output.FirstName, &output.LastName, &output.DateOfBirth, &output.Nationality)
 	if err != nil {
 		fmt.Printf("ERROR - directors.go/interface -  %s\n", err)
 		return output
@@ -147,10 +178,23 @@ func (inputRow *SqlRow) ScanDirector() Directors {
 // rowScanner method for scanning an 'Directors' object from multiple rows
 func (inputRow *SqlRows) ScanAllDirectors() Directors {
 	var output Directors
-	err := inputRow.rows.Scan(&output.DirectorID, &output.FirstName, &output.LastName, &output.Nationality, &output.DateOfBirth)
+	err := inputRow.rows.Scan(&output.DirectorID, &output.FirstName, &output.LastName, &output.DateOfBirth, &output.Nationality)
 	if err != nil {
 		fmt.Printf("ERROR - directors.go/interface -  %s\n", err)
 		return output
 	}
+	return output
+}
+
+// rowScanner method for inserting an 'Directors' object into the database as a single row
+func (queryStatement *SqlStmt) InsertIntoDirectors(inputRow Directors) int {
+	var output int
+	execTime := time.Now().UnixMilli()
+	err := queryStatement.statement.QueryRow(inputRow.FirstName, inputRow.LastName, inputRow.DateOfBirth, inputRow.Nationality).Scan(&output)
+	if err != nil {
+		fmt.Printf("ERROR - directors.go/interface -  %s\n", err)
+		return 0
+	}
+	fmt.Printf("Success! Execution time: %d milliseconds\n", time.Now().UnixMilli()-execTime)
 	return output
 }

@@ -27,10 +27,10 @@ func main() {
 	router.HandleFunc("/movies", getAllMovies).Methods("GET")       // GET all movies
 	router.HandleFunc("/revenues", getAllRevenues).Methods("GET")   // GET all movie revenues
 
-	/*router.HandleFunc("/actors", postActor).Methods("POST")           // POST a single actor
-	router.HandleFunc("/directors", postDirector).Methods("POST")     // POST a single director
-	router.HandleFunc("/movies", postMovie).Methods("POST")           // POST a single movie
-	router.HandleFunc("/revenues", postRevenues).Methods("POST") // POST a single set of revenues*/
+	router.HandleFunc("/actors", postActor).Methods("POST")       // POST a single actor
+	router.HandleFunc("/directors", postDirector).Methods("POST") // POST a single director
+	router.HandleFunc("/movies", postMovie).Methods("POST")       // POST a single movie
+	router.HandleFunc("/revenues", postRevenues).Methods("POST")  // POST a single set of revenues
 
 	router.HandleFunc("/actors/{id}", deleteActor).Methods("DELETE")       // DELETE a single actor by ID
 	router.HandleFunc("/directors/{id}", deleteDirector).Methods("DELETE") // DELETE a single director by ID
