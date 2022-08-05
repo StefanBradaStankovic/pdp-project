@@ -10,11 +10,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-//
 // ---------------------------------------- CONFIG SECTION ----------------------------------------
-// ---------------------------------------- CONFIG SECTION ----------------------------------------
-// ---------------------------------------- CONFIG SECTION ----------------------------------------
-//
+
 // Defining a json-friendly struct for rows from 'directors' table
 type Directors struct {
 	DirectorID  *int    `json:"directorID"`
@@ -24,22 +21,20 @@ type Directors struct {
 	Nationality *string `json:"nationality"`
 }
 
-const (
-	directorStatementSingle     = "SELECT * FROM directors WHERE director_id = $1"
-	directorStatementAll        = "SELECT * FROM directors"
-	directorStatementInsertInto = "INSERT INTO directors (first_name, last_name, date_of_birth, nationality) VALUES ($1, $2, $3, $4) RETURNING director_id"
-	directorStatementDeleteFrom = "DELETE FROM directors WHERE director_id = $1 RETURNING director_id"
-	directorStatementCheckForID = "SELECT count(director_id) FROM directors WHERE director_id = $1"
-)
+var directorStatement = queryStatement{
+	"SELECT director_id, first_name, last_name, date_of_birth, nationality FROM directors WHERE director_id = $1 AND is_visible", //selectSingle
+	"SELECT director_id, first_name, last_name, date_of_birth, nationality FROM directors WHERE is_visible",                      //selectAll
+	"INSERT INTO directors (first_name, last_name, date_of_birth, nationality) VALUES ($1, $2, $3, $4) RETURNING director_id",    //insertInto
+	"DELETE FROM directors WHERE director_id = $1 RETURNING director_id",                                                         //deleteFrom
+	"UPDATE directors SET is_visible = false WHERE director_id = $1",                                                             //updateVisible
+	"SELECT count(director_id) FROM directors WHERE director_id = $1 AND is_visible"}                                             //checkForID
 
-//
 // ---------------------------------------- SERVICE SECTION ----------------------------------------
-// ---------------------------------------- SERVICE SECTION ----------------------------------------
-// ---------------------------------------- SERVICE SECTION ----------------------------------------
-//
+
 // Get a single director from the database, encode it into a json
 // object and send it as a response. Log the activity into console
 func getDirector(w http.ResponseWriter, r *http.Request) {
+	setupCORS(&w, r)
 	var idParam string = mux.Vars(r)["id"]
 	id, err := strconv.Atoi(idParam)
 	// CHECK for a valid ID parameter
@@ -50,14 +45,13 @@ func getDirector(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// CHECK if item of ID exists in the database
-	if exists, err := checkIfExists(id, directorStatementCheckForID); err != nil || !exists {
+	if exists, err := checkIfExists(id, directorStatement.checkForID); err != nil || !exists {
 		w.WriteHeader(statusCodeNotFound.status)
 		w.Write([]byte(statusCodeNotFound.message + " - item does not exist!"))
-		fmt.Printf("ERROR: directors.go/checkIfExists:   %s\n", err)
 		return
 	}
 	// CHECK if there was an error during query
-	directorRow, err := selectItem(id, directorStatementSingle)
+	directorRow, err := selectItem(id, directorStatement.selectSingle)
 	if err != nil {
 		w.WriteHeader(statusCodeInternalError.status)
 		w.Write([]byte(statusCodeInternalError.message + " - could not fetch data!"))
@@ -76,9 +70,10 @@ func getDirector(w http.ResponseWriter, r *http.Request) {
 // Get all rows of directors from the database, encode it into a json
 // object and send it as a response. Log the activity into console
 func getAllDirectors(w http.ResponseWriter, r *http.Request) {
+	setupCORS(&w, r)
 	var directors []Directors
 	// CHECK if there was an error during query
-	directorRows, err := selectAllItems(directorStatementAll)
+	directorRows, err := selectAllItems(directorStatement.selectAll)
 	if err != nil {
 		w.WriteHeader(statusCodeInternalError.status)
 		w.Write([]byte(statusCodeInternalError.message + " - could not fetch data!"))
@@ -99,12 +94,13 @@ func getAllDirectors(w http.ResponseWriter, r *http.Request) {
 
 // Create a single director in a database based on input JSON object
 func postDirector(w http.ResponseWriter, r *http.Request) {
+	setupCORS(&w, r)
 	var director Directors
 	var statement SqlStmt
 	var err error
 	json.NewDecoder(r.Body).Decode(&director)
 	// Add error handling
-	statement.statement, err = insertItem(directorStatementInsertInto)
+	statement.statement, err = insertItem(directorStatement.insertInto)
 	if err != nil {
 		w.WriteHeader(statusCodeQueryError.status)
 		w.Write([]byte(statusCodeQueryError.message))
@@ -129,6 +125,7 @@ func postDirector(w http.ResponseWriter, r *http.Request) {
 
 // Find a single director in a database and delete it permanently
 func deleteDirector(w http.ResponseWriter, r *http.Request) {
+	setupCORS(&w, r)
 	var idParam string = mux.Vars(r)["id"]
 	id, err := strconv.Atoi(idParam)
 	// CHECK for a valid ID parameter
@@ -139,37 +136,33 @@ func deleteDirector(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// CHECK if item of ID exists in the database
-	if exists, err := checkIfExists(id, directorStatementCheckForID); err != nil || !exists {
+	if exists, err := checkIfExists(id, directorStatement.checkForID); err != nil || !exists {
 		w.WriteHeader(statusCodeNotFound.status)
 		w.Write([]byte(statusCodeNotFound.message + " - item does not exist!"))
-		fmt.Printf("ERROR: directors.go/checkIfExists:   %s\n", err)
 		return
 	}
 
 	// Sending DELETE FROM query
-	deletedID, err := deleteItem(id, directorStatementDeleteFrom)
+	err = deleteItem(id, directorStatement.updateVisible)
 	if err != nil {
 		fmt.Printf("ERROR: directors.go/deleteItem: %s\n", err)
 		return
 	}
 	w.WriteHeader(statusCodeItemDeleted.status)
-	w.Write([]byte(fmt.Sprintf("%s - %d", statusCodeItemDeleted.message, deletedID)))
+	w.Write([]byte(fmt.Sprintf("%s - %d", statusCodeItemDeleted.message, id)))
 	w.Header().Set("Content-Type", "application/json")
 
-	fmt.Printf("DELETE FROM | directors | %d\n", deletedID)
+	fmt.Printf("DELETE FROM | directors | %d\n", id)
 }
 
-//
 // ---------------------------------------- INTERFACE SECTION ----------------------------------------
-// ---------------------------------------- INTERFACE SECTION ----------------------------------------
-// ---------------------------------------- INTERFACE SECTION ----------------------------------------
-//
+
 // rowScanner method for scanning a 'Directors' object
 func (inputRow *SqlRow) ScanDirector() Directors {
 	var output Directors
 	err := inputRow.row.Scan(&output.DirectorID, &output.FirstName, &output.LastName, &output.DateOfBirth, &output.Nationality)
 	if err != nil {
-		fmt.Printf("ERROR - directors.go/interface -  %s\n", err)
+		fmt.Printf("ERROR - directors.go/interface/ScanDirector -  %s\n", err)
 		return output
 	}
 	return output
@@ -180,7 +173,7 @@ func (inputRow *SqlRows) ScanAllDirectors() Directors {
 	var output Directors
 	err := inputRow.rows.Scan(&output.DirectorID, &output.FirstName, &output.LastName, &output.DateOfBirth, &output.Nationality)
 	if err != nil {
-		fmt.Printf("ERROR - directors.go/interface -  %s\n", err)
+		fmt.Printf("ERROR - directors.go/interface/ScanAllDIrectors -  %s\n", err)
 		return output
 	}
 	return output
@@ -192,7 +185,7 @@ func (queryStatement *SqlStmt) InsertIntoDirectors(inputRow Directors) int {
 	execTime := time.Now().UnixMilli()
 	err := queryStatement.statement.QueryRow(inputRow.FirstName, inputRow.LastName, inputRow.DateOfBirth, inputRow.Nationality).Scan(&output)
 	if err != nil {
-		fmt.Printf("ERROR - directors.go/interface -  %s\n", err)
+		fmt.Printf("ERROR - directors.go/interface/InsertIntoDirectors -  %s\n", err)
 		return 0
 	}
 	fmt.Printf("Success! Execution time: %d milliseconds\n", time.Now().UnixMilli()-execTime)

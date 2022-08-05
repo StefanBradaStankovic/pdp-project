@@ -1,0 +1,168 @@
+body {
+    font-family: "Cascadia Code";
+}
+button {
+    font-family: "Cascadia Code";
+    margin-top: 1pt;
+    margin-bottom: 1pt;
+    margin-left: 2pt;
+    margin-right: 2pt;
+
+    width: 100px;
+    height: 30px;
+}
+select {
+    font-family: "Cascadia Code";
+    margin-top: 1pt;
+    margin-bottom: 1pt;
+    margin-left: 2pt;
+    margin-right: 2pt;
+    height: 20px;
+}
+p {
+    margin-top: 1pt;
+    margin-bottom: 1pt;
+    margin-left: 2pt;
+    margin-right: 2pt;
+}
+span {
+    margin-top: 1pt;
+    margin-bottom: 1pt;
+    margin-left: 2pt;
+    margin-right: 2pt;
+}
+
+.wrapper-block {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    background-color: #BABABA
+}
+.display-block {
+    border: groove;
+    border-width: 4px;
+    height: 800px;
+    display: none;
+    background-color: #CACACA;
+}
+.element-block {
+    display: none;
+    border: groove;
+    border-width: 4px;
+    background-color: #CACACA;
+}
+.droptown-block {
+    float: left;
+}
+.input-block {
+    border: groove;
+    border-width: 4px;
+    display: none;
+}
+.input-element {
+    border-bottom-style: dotted;
+    border-width: 0.5px;
+    height: 30px;
+}
+.actors-input-span {
+    display: inline;
+    float:left;
+}
+.actors-input-field {
+    display: inline;
+    float:right;
+}
+.directors-input-span {
+    display: inline;
+    float:left;
+}
+.directors-input-field {
+    display: inline;
+    float:right;
+}
+.movies-input-span {
+    display: inline;
+    float:left;
+}
+.movies-input-field {
+    display: inline;
+    float:right;
+}
+.revenues-input-span {
+    display: inline;
+    float:left;
+}
+.revenues-input-field {
+    display: inline;
+    float:right;
+}
+.actors-item {
+    display: flex;
+    border-bottom-style: dotted;
+    border-width: 0.5px;
+}
+.directors-item {
+    display: flex;
+    border-bottom-style: dotted;
+    border-width: 0.5px;
+}
+.movies-item {
+    display: flex;
+    border-bottom-style: dotted;
+    border-width: 0.5px;
+}
+.revenues-item {
+    display: flex;
+    border-bottom-style: dotted;
+    border-width: 0.5px;
+}
+.actors-span {
+    flex: 1;
+    text-align: right;
+    white-space: nowrap;
+}
+.directors-span {
+    flex: 1;
+    text-align: right;
+    white-space: nowrap;
+}
+.movies-span {
+    flex: 1;
+    text-align: right;
+    white-space: nowrap;
+}
+.revenues-span {
+    flex: 1;
+    text-align: right;
+    white-space: nowrap;
+}
+
+#global {
+    max-width: 100%;
+}
+#top {
+    height: 50px;
+}
+#left {
+    float: left;
+    width: 50%;
+    height: 800px;
+
+    background-color: #CACACA;
+}
+#right {
+    width: 50%;
+    height: 800px;
+    overflow-x: auto;
+    margin-left: 50%;
+
+    background-color: #CACACA;
+}
+#button-block {
+    height: 40px;
+    display: flex;
+    justify-content: left;
+    align-items: center;
+}
+#requestID {
+    float: right;
+}

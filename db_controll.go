@@ -9,11 +9,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-//
 // ---------------------------------------- QUERY SECTION ----------------------------------------
-// ---------------------------------------- QUERY SECTION ----------------------------------------
-// ---------------------------------------- QUERY SECTION ----------------------------------------
-//
 
 // Select a single row from 'TABLE_NAME' using 'ITEM_ID'
 func selectItem(id int, queryString string) (SqlRow, error) {
@@ -29,7 +25,7 @@ func selectItem(id int, queryString string) (SqlRow, error) {
 	if err != nil {
 		return item, err
 	}
-	fmt.Printf("Excecution time: %dms\n", time.Now().UnixMilli()-execTime)
+	fmt.Printf("Success! Excecution time: %dms\n", time.Now().UnixMilli()-execTime)
 
 	return item, err
 }
@@ -65,28 +61,20 @@ func insertItem(queryString string) (*sql.Stmt, error) {
 }
 
 // Delete a single row from 'TABLE_NAME' using 'ITEM_ID'
-func deleteItem(id int, queryString string) (int, error) {
-	var result int
+func deleteItem(id int, queryString string) error {
 	statement, err := db.Prepare(queryString)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	execTime := time.Now().UnixMilli()
-	err = statement.QueryRow(id).Scan(&result)
-	if err != nil {
-		return 0, err
-	}
+	_ = statement.QueryRow(id)
 	fmt.Printf("Success! Execution time: %d milliseconds\n", time.Now().UnixMilli()-execTime)
 
-	return result, err
+	return nil
 }
 
-//
 // ---------------------------------------- CONTROLL SECTION ----------------------------------------
-// ---------------------------------------- CONTROLL SECTION ----------------------------------------
-// ---------------------------------------- CONTROLL SECTION ----------------------------------------
-//
 
 // Make a DB connection string using specified config
 func setDBConnection() string {
@@ -117,7 +105,7 @@ func checkIfExists(id int, queryString string) (bool, error) {
 		return false, err
 	}
 	err = statement.QueryRow(id).Scan(&result)
-	fmt.Printf("Query result is: %d\n", result)
+	//fmt.Printf("Query result is: %d\n", result)
 	if err != nil || result <= 0 {
 		return false, err
 	}

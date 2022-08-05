@@ -9,13 +9,13 @@ import (
 
 func main() {
 
-	// INIT START
+	// INIT ---START---
 	fmt.Printf("Starting up the server . . .\n")
 	router := mux.NewRouter()
 	psqlConnect = setDBConnection()
 	db = dbConnect()
 	defer db.Close()
-	// INIT END
+	// INIT ---END---
 
 	router.HandleFunc("/actors/{id}", getActor).Methods("GET")       // GET a single actor by ID
 	router.HandleFunc("/directors/{id}", getDirector).Methods("GET") // GET a single director by ID
@@ -32,11 +32,18 @@ func main() {
 	router.HandleFunc("/movies", postMovie).Methods("POST")       // POST a single movie
 	router.HandleFunc("/revenues", postRevenues).Methods("POST")  // POST a single set of revenues
 
-	router.HandleFunc("/actors/{id}", deleteActor).Methods("DELETE")       // DELETE a single actor by ID
-	router.HandleFunc("/directors/{id}", deleteDirector).Methods("DELETE") // DELETE a single director by ID
-	router.HandleFunc("/movies/{id}", deleteMovie).Methods("DELETE")       // DELETE a single movie by ID
-	router.HandleFunc("/revenues/{id}", deleteRevenues).Methods("DELETE")  // DELETE a single set of revenues by ID
+	router.HandleFunc("/actors/{id}", deleteActor).Methods("POST")       // DELETE a single actor by ID
+	router.HandleFunc("/directors/{id}", deleteDirector).Methods("POST") // DELETE a single director by ID
+	router.HandleFunc("/movies/{id}", deleteMovie).Methods("POST")       // DELETE a single movie by ID
+	router.HandleFunc("/revenues/{id}", deleteRevenues).Methods("POST")  // DELETE a single set of revenues by ID
 
 	fmt.Printf("Server up and running!\n")
 	http.ListenAndServe(":5000", router)
+}
+
+func setupCORS(w *http.ResponseWriter, req *http.Request) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, PATCH, DELETE, HEAD, OPTIONS")
+	(*w).Header().Set("Access-Control-Allow-Credentials", "true")
+	(*w).Header().Set("Access-Control-Allow-Headers", "X-Requested-With, origin, content-type, accept")
 }

@@ -10,11 +10,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-//
 // ---------------------------------------- CONFIG SECTION ----------------------------------------
-// ---------------------------------------- CONFIG SECTION ----------------------------------------
-// ---------------------------------------- CONFIG SECTION ----------------------------------------
-//
+
 // Defining a json-friendly struct for rows from 'movies' table
 type Movies struct {
 	MovieID        *int    `json:"movieID"`
@@ -26,22 +23,20 @@ type Movies struct {
 	DirectorID     *int    `json:"directorID"`
 }
 
-const (
-	movieStatementSingle     = "SELECT * FROM movies WHERE movie_id = $1"
-	movieStatementAll        = "SELECT * FROM movies"
-	movieStatementInsertInto = "INSERT INTO movies (movie_name, movie_length, movie_lang, release_date, age_certificate, director_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING movie_id"
-	movieStatementDeleteFrom = "DELETE FROM movies WHERE movie_id = $1 RETURNING movie_id"
-	movieStatementCheckForID = "SELECT count(movie_id) FROM movies WHERE movie_id = $1"
-)
+var movieStatement = queryStatement{
+	"SELECT movie_id, movie_name, movie_length, movie_lang, release_date, age_certificate, director_id FROM movies WHERE movie_id = $1 AND is_visible",         //selectSingle
+	"SELECT movie_id, movie_name, movie_length, movie_lang, release_date, age_certificate, director_id FROM movies WHERE is_visible",                           //selectAll
+	"INSERT INTO movies (movie_name, movie_length, movie_lang, release_date, age_certificate, director_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING movie_id", //insertInto
+	"DELETE FROM movies WHERE movie_id = $1 RETURNING movie_id",                                                                                                //deleteFrom
+	"UPDATE movies SET is_visible = false WHERE movie_id = $1",                                                                                                 //updateVisible
+	"SELECT count(movie_id) FROM movies WHERE movie_id = $1 AND is_visible"}                                                                                    //checkForID
 
-//
 // ---------------------------------------- SERVICE SECTION ----------------------------------------
-// ---------------------------------------- SERVICE SECTION ----------------------------------------
-// ---------------------------------------- SERVICE SECTION ----------------------------------------
-//
+
 // Get a single movie from the database, encode it into a json
 // object and send it as a response. Log the activity into console
 func getMovie(w http.ResponseWriter, r *http.Request) {
+	setupCORS(&w, r)
 	var idParam string = mux.Vars(r)["id"]
 	id, err := strconv.Atoi(idParam)
 	// CHECK for a valid ID parameter
@@ -52,14 +47,13 @@ func getMovie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// CHECK if item of ID exists in the database
-	if exists, err := checkIfExists(id, movieStatementCheckForID); err != nil || !exists {
+	if exists, err := checkIfExists(id, movieStatement.checkForID); err != nil || !exists {
 		w.WriteHeader(statusCodeNotFound.status)
 		w.Write([]byte(statusCodeNotFound.message + " - item does not exist!"))
-		fmt.Printf("ERROR: movies.go/checkIfExists:   %s\n", err)
 		return
 	}
 	// CHECK if there was an error during query
-	movieRow, err := selectItem(id, movieStatementSingle)
+	movieRow, err := selectItem(id, movieStatement.selectSingle)
 	if err != nil {
 		w.WriteHeader(statusCodeInternalError.status)
 		w.Write([]byte(statusCodeInternalError.message + " - could not fetch data!"))
@@ -78,9 +72,10 @@ func getMovie(w http.ResponseWriter, r *http.Request) {
 // Get all rows of movies from the database, encode it into a json
 // object and send it as a response. Log the activity into console
 func getAllMovies(w http.ResponseWriter, r *http.Request) {
+	setupCORS(&w, r)
 	var movies []Movies
 	// CHECK if there was an error during query
-	moviesRows, err := selectAllItems(movieStatementAll)
+	moviesRows, err := selectAllItems(movieStatement.selectAll)
 	if err != nil {
 		w.WriteHeader(statusCodeInternalError.status)
 		w.Write([]byte(statusCodeInternalError.message + " - could not fetch data!"))
@@ -101,12 +96,13 @@ func getAllMovies(w http.ResponseWriter, r *http.Request) {
 
 // Create a single movie in a database based on input JSON object
 func postMovie(w http.ResponseWriter, r *http.Request) {
+	setupCORS(&w, r)
 	var movie Movies
 	var statement SqlStmt
 	var err error
 	json.NewDecoder(r.Body).Decode(&movie)
 	// Add error handling
-	statement.statement, err = insertItem(movieStatementInsertInto)
+	statement.statement, err = insertItem(movieStatement.insertInto)
 	if err != nil {
 		w.WriteHeader(statusCodeQueryError.status)
 		w.Write([]byte(statusCodeQueryError.message))
@@ -131,6 +127,7 @@ func postMovie(w http.ResponseWriter, r *http.Request) {
 
 // Find a single movie in a database and delete it permanently
 func deleteMovie(w http.ResponseWriter, r *http.Request) {
+	setupCORS(&w, r)
 	var idParam string = mux.Vars(r)["id"]
 	id, err := strconv.Atoi(idParam)
 	// CHECK for a valid ID parameter
@@ -141,37 +138,33 @@ func deleteMovie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// CHECK if item of ID exists in the database
-	if exists, err := checkIfExists(id, movieStatementCheckForID); err != nil || !exists {
+	if exists, err := checkIfExists(id, movieStatement.checkForID); err != nil || !exists {
 		w.WriteHeader(statusCodeNotFound.status)
 		w.Write([]byte(statusCodeNotFound.message + " - item does not exist!"))
-		fmt.Printf("ERROR: movies.go/checkIfExists:   %s\n", err)
 		return
 	}
 
 	// Sending DELETE FROM query
-	deletedID, err := deleteItem(id, movieStatementDeleteFrom)
+	err = deleteItem(id, movieStatement.deleteFrom)
 	if err != nil {
 		fmt.Printf("ERROR: movies.go/deleteItem: %s\n", err)
 		return
 	}
 	w.WriteHeader(statusCodeItemDeleted.status)
-	w.Write([]byte(fmt.Sprintf("%s - %d", statusCodeItemDeleted.message, deletedID)))
+	w.Write([]byte(fmt.Sprintf("%s - %d", statusCodeItemDeleted.message, id)))
 	w.Header().Set("Content-Type", "application/json")
 
-	fmt.Printf("DELETE FROM | movies | %d\n", deletedID)
+	fmt.Printf("DELETE FROM | movies | %d\n", id)
 }
 
-//
 // ---------------------------------------- INTERFACE SECTION ----------------------------------------
-// ---------------------------------------- INTERFACE SECTION ----------------------------------------
-// ---------------------------------------- INTERFACE SECTION ----------------------------------------
-//
+
 // rowScanner method for scanning a 'Movies' object
 func (inputRow *SqlRow) ScanMovie() Movies {
 	var output Movies
 	err := inputRow.row.Scan(&output.MovieID, &output.MovieName, &output.MovieLength, &output.MovieLang, &output.ReleaseDate, &output.AgeCertificate, &output.DirectorID)
 	if err != nil {
-		fmt.Printf("ERROR - movies.go/interface -  %s\n", err)
+		fmt.Printf("ERROR - movies.go/interface/ScanMovie -  %s\n", err)
 		return output
 	}
 	return output
@@ -182,7 +175,7 @@ func (inputRow *SqlRows) ScanAllMovies() Movies {
 	var output Movies
 	err := inputRow.rows.Scan(&output.MovieID, &output.MovieName, &output.MovieLength, &output.MovieLang, &output.ReleaseDate, &output.AgeCertificate, &output.DirectorID)
 	if err != nil {
-		fmt.Printf("ERROR - movies.go/interface -  %s\n", err)
+		fmt.Printf("ERROR - movies.go/interface/ScanAllMovies -  %s\n", err)
 		return output
 	}
 	return output
@@ -194,7 +187,7 @@ func (queryStatement *SqlStmt) InsertIntoMovies(inputRow Movies) int {
 	execTime := time.Now().UnixMilli()
 	err := queryStatement.statement.QueryRow(inputRow.MovieName, inputRow.MovieLength, inputRow.MovieLang, inputRow.ReleaseDate, inputRow.AgeCertificate, inputRow.DirectorID).Scan(&output)
 	if err != nil {
-		fmt.Printf("ERROR - actors.go/interface -  %s\n", err)
+		fmt.Printf("ERROR - actors.go/interface/InsertIntoMovies -  %s\n", err)
 		return 0
 	}
 	fmt.Printf("Success! Execution time: %d milliseconds\n", time.Now().UnixMilli()-execTime)

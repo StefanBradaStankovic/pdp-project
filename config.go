@@ -18,6 +18,15 @@ const (
 var psqlConnect string
 var db *sql.DB
 
+type queryStatement struct {
+	selectSingle  string
+	selectAll     string
+	insertInto    string
+	deleteFrom    string
+	updateVisible string
+	checkForID    string
+}
+
 // Wrapper for database/sql type *sql.Row since golang interfaces
 // do not support that type as receiver
 type SqlRow struct {

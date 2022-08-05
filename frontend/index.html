@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html> 
+<head>
+    <title>movies-database</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="jquery-3.6.0.js"></script>
+    <script src="script.js"></script>
+</head>
+
+<body>
+
+<div class="wrapper-block" id="global">
+
+    <div class="wrapper-block" id="top">
+        <select class="dropdown" id="methods" onchange="setDisplayBlock()">
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PATCH">DELETE</option>
+        </select>
+
+        <select class="dropdown" id="requests" onchange="setDisplayElementText()">
+            <option value="actors">Actors</option>
+            <option value="directors">Directors</option>
+            <option value="movies">Movies</option>
+            <option value="revenues">Revenues</option>
+        </select>
+    </div>
+
+    <div class="wrapper-block" id="left">
+
+        <div class="display-block" id="get-id-block">
+            <span id="get-request-element-span">Actor ID:</span>
+            <input class="textfield" id="get-requestID" type="text" >
+        </div>
+
+        <div class="display-block" id="patch-id-block">
+            <span id="patch-request-element-span">Actor ID:</span>
+            <input class="textfield" id="patch-requestID" type="text" >
+        </div>
+
+
+        <div class="display-block" id="post-id-block">
+
+            <div class="input-block" id="actors-input-block">
+                <div class="input-element">
+                    <span class="actors-input-span">First name: </span>
+                    <input class="actors-input-field" name="firstName" type="text" >
+                </div>
+                <div class="input-element">
+                    <span class="actors-input-span">Last name: </span>
+                    <input class="actors-input-field" name="lastName" type="text" >
+                </div>
+                <div class="input-element">
+                    <span class="actors-input-span">Gender: </span>
+                    <select class="actors-input-field" name="gender">
+                        <option value="F">Female</option>
+                        <option value="M">Male</option>
+                    </select>
+                </div>
+                <div class="input-element">
+                    <span class="actors-input-span">Date of birth: </span>
+                    <input class="actors-input-field" name="dateOfBirth" type="date" >
+                </div>
+            </div>
+
+            <div class="input-block" id="directors-input-block">
+                <div class="input-element">
+                    <span class="directors-input-span">First name: </span>
+                    <input class="directors-input-field" name="firstName" type="text" >
+                </div>
+                <div class="input-element">
+                    <span class="directors-input-span">Last name: </span>
+                    <input class="directors-input-field" name="lastName" type="text" >
+                </div>
+                <div class="input-element">
+                    <span class="directors-input-span">Date of birth: </span>
+                    <input class="directors-input-field" name="dateOfBirth" type="date" >
+                </div>
+                <div class="input-element">
+                    <span class="directors-input-span">Nationality: </span>
+                    <input class="directors-input-field" name="nationality" type="text" >
+                </div>
+            </div>
+
+            <div class="input-block" id="movies-input-block">
+                <div class="input-element">
+                    <span class="movies-input-span">Movie name: </span>
+                    <input class="movies-input-field" name="movieName" type="text" >
+                </div>
+                <div class="input-element">
+                    <span class="movies-input-span">Movie length: </span>
+                    <input class="movies-input-field" name="movieLength" type="text" >
+                </div>
+                <div class="input-element">
+                    <span class="movies-input-span">Movie language: </span>
+                    <input class="movies-input-field" name="movieLang" type="text" >
+                </div>
+                <div class="input-element">
+                    <span class="movies-input-span">Release date: </span>
+                    <input class="movies-input-field" name="releaseDate" type="date" >
+                </div>
+                <div class="input-element">
+                    <span class="movies-input-span">Age certificate: </span>
+                    <input class="movies-input-field" name="ageCertificate" type="text" >
+                </div>
+                <div class="input-element">
+                    <span class="movies-input-span">Director ID: </span>
+                    <input class="movies-input-field" name="directorID" type="text" >
+                </div>
+            </div>
+
+            <div class="input-block" id="revenues-input-block">
+                <div class="input-element">
+                    <span class="revenues-input-span">Movie ID: </span>
+                    <input class="revenues-input-field" name="movieID" type="text" >
+                </div>
+                <div class="input-element">
+                    <span class="revenues-input-span">Domestic takings: </span>
+                    <input class="revenues-input-field" name="domesticTakings" type="text" >
+                </div>
+                <div class="input-element">
+                    <span class="revenues-input-span">International takings: </span>
+                    <input class="revenues-input-field" name="internationalTakings" type="text" >
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="wrapper-block" id="right">
+
+        <div class="element-block" id="actors-element">
+            <p class="actors-item">Actor ID:                  <span class="actors-span"></span></p>
+            <p class="actors-item">First name:                <span class="actors-span"></span></p>
+            <p class="actors-item">Last name:                 <span class="actors-span"></span></p>
+            <p class="actors-item">Gender:                    <span class="actors-span"></span></p>
+            <p class="actors-item">Date of birth:             <span class="actors-span"></span></p>
+        </div>
+        <div class="element-block" id="directors-element">
+            <p class="directors-item">Director ID:            <span class="directors-span"></span></p>
+            <p class="directors-item">First name:             <span class="directors-span"></span></p>
+            <p class="directors-item">Last name:              <span class="directors-span"></span></p>
+            <p class="directors-item">Date of birth:          <span class="directors-span"></span></p>
+            <p class="directors-item">Nationality:            <span class="directors-span"></span></p>
+        </div>
+        <div class="element-block" id="movies-element">
+            <p class="movies-item">Movie ID:                  <span class="movies-span"></span></p>
+            <p class="movies-item">Movie name:                <span class="movies-span"></span></p>
+            <p class="movies-item">Movie length:              <span class="movies-span"></span></p>
+            <p class="movies-item">Movie language:            <span class="movies-span"></span></p>
+            <p class="movies-item">Release date:              <span class="movies-span"></span></p>
+            <p class="movies-item">Age certificate:           <span class="movies-span"></span></p>
+            <p class="movies-item">Director ID:               <span class="movies-span"></span></p>
+        </div>
+        <div class="element-block" id="revenues-element">
+            <p class="revenues-item">Revenue ID:              <span class="revenues-span"></span></p>
+            <p class="revenues-item">Movie ID:                <span class="revenues-span"></span></p>
+            <p class="revenues-item">Domestic takings:        <span class="revenues-span"></span></p>
+            <p class="revenues-item">International takings:   <span class="revenues-span"></span></p>
+        </div>
+
+    </div>
+
+    <div class="wrapper-block" id="bottom">
+        <button id="request-button" type="button" accesskey="q" onclick="sendRequest()">Request</button>
+    </div>
+
+</div>
+
+</body>
+</html>
